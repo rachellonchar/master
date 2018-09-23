@@ -1,4 +1,3 @@
-
 from numerical_slope import *
 import basic_fitting_funcs as btf
 import imageio
@@ -25,7 +24,7 @@ mask0,mask1 = {},{}
 mask1.update({'rationale':'removing outliers in a model should lead to a steady slope at some number of removed outliers'})
 mask0.update({'mask vector':np.zeros_like(v['Ts10'])})
 mask1.update({0:mask0})
-mask_typesD({'outlier removal':mask1})
+mask_typesD.update({'outlier removal':mask1})
 v.update({'mask':mask_typesD})
 #to get the mask:  
    # v['mask'][*mask type*][*ID of mask within mask type*]['mask vector']
@@ -117,17 +116,34 @@ def threshold_mask(threshold=0,param='WT',dic=v,naming_dic=n):
     return dic, naming_dic
 v,n = threshold_mask()
 
-#YOU GOT TO FIX FROM HERE DOWN --------------------------------------------------------
+def notation_fix(Tsoil,dic=v,naming_dic=n):
+    Tsil = dic
+    if type(Tsoil)!=list:
+        Tsoil = [Tsoil]
+    dic,naming_dic = updater(Tsoil[0])
+    for modifier in Tsoil:
+        new = Tsil[modifier]
+        Tsil = new
+    return Tsil
+def list_to_name(Tsoil):
+    Tstring = ''
+    if type(Tsoil)!=list:
+        Tsoil = [Tsoil]
+    for modifier in Tsoil:
+        Tstring += str(modifier)
+    return Tstring
+        
 #outlier_analysis_funcs = {}
 def expected_CH4(Tsoil='NTs10',CH4='NCH4_S1',fit_type=btf.func_exp,dic=v,naming_dic=n,mask=None):
-    dic,naming_dic = updater(Tsoil,CH4)
-    fic = btf.fit_2sets(dic[Tsoil],dic[CH4], fit_func=fit_type, mask=mask)
+    
+    Tsil,Csil = notation_fix(Tsoil), notation_fix(CH4)
+    fic = btf.fit_2sets(Tsil,Csil, fit_func=fit_type, mask=mask)
     exp_fun = fic['function']
     exp_labe = fic['print function']
     popt = fic['parameters']
     dic_Ts,dic_Ts2 = fic,{}
     dicT = {}
-    dicT.update({'f':dic_Ts})
+    #dicT.update({'f':dic_Ts})
     fun = exp_fun
     if fit_type == btf.func_exp:
         lin_labe = btf.pre_plot(popt) #default model is polynomial
@@ -136,132 +152,117 @@ def expected_CH4(Tsoil='NTs10',CH4='NCH4_S1',fit_type=btf.func_exp,dic=v,naming_
         dic_Ts2.update({'function':lin_fun})
         dic_Ts2.update({'print function':lin_labe})
         dic_Ts2.update({'parameters':lin_popt})
-        dicT.update({'logf':dic_Ts2})
+        dicT = dic_Ts2
         fun = lin_fun
-    #find furthest
-    res_squared = [(dic[CH4][idx]-fun(dic[Tsoil][idx]))**2 for idx in range(0,len(dic[Tsoil]))]
+    else:
+        dicT = dic_Ts
+    if type(mask) == type(None):
+        mask,new_mask = np.zeros_like(Tsil),np.zeros_like(Tsil)
+    else:
+        new_mask = mask
+    exp = [fun(Tsil[ii]) for ii in range(0,len(Tsil))]
+    if fit_type!=btf.func_exp:
+        res_squared = [abs(Csil[ii]-exp[ii]) for ii in range(0,len(Tsil))]
+    else:
+        res_squared = [abs(np.log(Csil[ii])-exp[ii]) for ii in range(0,len(Tsil))]
+        #res_squared = [abs(np.exp(np.log(v[CH4][ii])-exp[ii])) for ii in range(0,len(v[Tsoil]))]
+    for ii in range(0,len(res_squared)):
+        if mask[ii]==1:
+            res_squared[ii]=0
     mark_outlier = np.argmax(res_squared)
-    dicT.update({'outlier index':mark_outlier})
-    if mask==None:
-        new_mask = np.zeros_like(dic[Tsoil])
-    else:
-        new_mask = mask
     new_mask[mark_outlier] = 1
-    outs_removed = 1-sum(new_mask)
-    return dicT, outs_removed
-
-
-def carbon_predictions(Tsoil='NTs10',CH4='NCH4_S1',dictt=v,naming_dic=n,mask=None):
-    
-    dic = {}
-    dicT, outs_removed = expected_CH4(Tsoil=Tsoil,CH4=CH4,fit_type=btf.func_exp,
-        dic=dic,naming_dic=naming_dic,mask=mask)
-    dic_Ts, dic_Ts2 = dicT['f'], dicT['logf']
-    try:
-        dic['f'][CH4].update({Tsoil:dic_Ts})
-        dic['logf'][CH4].update({Tsoil:dic_Ts2})
-    except:
-        dic_CH,dic_CH2 = {},{}
-        dic_CH.update({Tsoil:dic_Ts})
-        dic_CH2.update({Tsoil:dic_Ts2})
-        try:
-            dic['f'].update({CH4:dic_CH})
-            dic['logf'].update({CH4:dic_CH2})
-        except:
-            dic_f,dic_logf = {},{}
-            dic_f.update({CH4:dic_CH})
-            dic_logf.update({CH4:dic_CH2})
-            dic.update({'f':dic_f})
-            dic.update({'logf':dic_logf})
-            try:
-                f_types = naming_dic['function types']
-            except:
-                f_types = []
-            f_types.append('f')
-            f_types.append('logf')
-            naming_dic.update({'function types':f_types})
-    return dic,naming_dic
-
-#no mask for Ts10 vs. CH4 curve fit:
-#
-v,n = carbon_predictions(Tsoil='NTs10',CH4='NCH4_S1',dic=v,naming_dic=n)
-
-def general_fit_pre(X,Y,fit_type=btf.func_linear,mask=None):
-    v,n = updater(X,Y)
-    func_fit_dic, outs_removed = expected_CH4(Tsoil=X,CH4=Y,fit_type=fit_type,
+    outs_removed = sum(new_mask)
+    dicT.update({'new mask':new_mask})
+    return dicT, new_mask, outs_removed
+def general_fit_pre(X,Y,fit_type=btf.func_linear,mask=None,just_slope=0):
+    #v,n = updater(X,Y)
+    func_fit_dic, new_mask, outs_removed = expected_CH4(Tsoil=X,CH4=Y,fit_type=fit_type,
         dic=v,naming_dic=n,mask=mask)
-    mark = func_fit_dic['outlier index']
-    if mask==None:
-        new_mask = np.zeros_like(dic[Tsoil])
+    popt = func_fit_dic['parameters'] 
+    slopef = popt[1]
+    if just_slope==1:
+        return slopef
     else:
-        new_mask = mask
-    new_mask[mark] = 1
-    popt = func_fit_dic['logf']['parameters'] if (fit_type == btf.func_exp) else func_fit_dic['f']['parameters']
-    if fit_type==btf.func_linear or fit_type==btf.func_exp:
-        def slopef(xx): return popt[1]
-    elif fit_type==btf.func_poly2:
-        def slopef(xx): return popt[1]+2*popt[2]*xx
-    elif fit_type==btf.func_poly3:
-        def slopef(xx): return popt[1]+2*popt[2]*xx+3*popt[3]*xx**2
-    return outs_removed, slopef, new_mask
+        func_fit_dic.update({'slope':slopef})
+        return func_fit_dic, new_mask, outs_removed
 
-def linear_deviations(X,Y,dic=v,naming_dic=n,fit_type=btf.func_linear,mask=None):
-    #check if X,Y linear (or exponential) model already exists 
-    if mask==None:
-        try:
-            
+
+def deviations_from_fit(X,Y,fit_type=btf.func_linear,mask=None):
+    fit_dic, new_mask,outs_removed = general_fit_pre(X=X,Y=Y,fit_type=fit_type,mask=None)
+    fun = fit_dic['function']
+    exp = [fun(notation_fix(X)[ii]) for ii in range(0,len(v[X]))]
+    if fit_type!=btf.func_exp:
+        dev = [v[Y][ii]-exp[ii] for ii in range(0,len(v[X]))]
+    else:
+        dev = [np.exp(np.log(notation_fix(Y)[ii])-exp[ii]) for ii in range(0,len(v[X]))]
+        #dev = [np.exp(np.log(v[Y][ii])-exp[ii]) for ii in range(0,len(v[X]))]
+    return dev
+
+
+
+def outlier_loop(X,Y,fit_type=btf.func_linear,num_of_outliers=10):
+    #v,n = updater(X,Y)
+    fit_dic, new_mask,outs_removed = general_fit_pre(X=X,Y=Y,fit_type=fit_type,mask=None)
+    fun_info = {}
+    fun_info.update({0:fit_dic})
     
-    #if fit_type==btf.func_linear or fit_type==btf.func_exp:
-    dic,naming_dic = updater(X,Y)
-    dicT, outs_removed = expected_CH4(Tsoil=X,CH4=Y,fit_type=fit_type,
-        dic=dic,naming_dic=naming_dic,mask=mask)
+    mask_types = n['mask types']
+    typee = 'outlier removal, '+X+' vs. '+Y
+    mask_types.append(typee)
+    n.update({'mask types':mask_types})
+    defN = {}
+    n['mask subtypes'].update({typee:[i for i in range(0,num_of_outliers+1)]})
+    #mask info:
+    mask_typesD = {}
+    mask0,mask1 = {},{}
+    mask1.update({'rationale':'removing outliers in a model should lead to a steady slope at some number of removed outliers'})
+    mask0.update({'mask vector':np.zeros_like(v['Ts10'])})
+    mask1.update({0:mask0})
+    mask_typesD.update({typee:mask1})
+    v.update({'mask':mask_typesD})
+    for ii in range(1,num_of_outliers+2):
+        tempD = {}
+        tempD.update({'mask vector':np.copy(new_mask)})
+        fit_dic, new_mask, outs_removed = general_fit_pre(X=X,Y=Y,fit_type=fit_type,mask=new_mask)
+        tempD.update({'function info':fit_dic})
+        v['mask'][typee].update({ii:tempD})
+    return v,n 
 
-def general_fit(X,Y,fit_type=btf.func_linear,mask=None):
-        
-
-#def out_slope_plot(X,Y,outliers_removed=10):
-    #Xn,Yn = X,Y
-    #slopes = []
-    #for ou in range(0, outliers_removed):
-        #Xx,Yy,slop = pot_CH(Xn,Yn)
-        #slopes.append(slop)
-        #Xn,Yn=Xx,Yy
-    #plt.plot(np.arange(1,outliers_removed+1),slopes,'bo')
-    #plt.show()
-   
-#v,n = updater('NWT')
-#expect = [fun['NCH4_S1']['NTs10'](x) for x in v['NTs10']]
-#devs = [v['NCH4_S1'][idx]-expect[idx] for idx in range(0, len(expect))] #observed - model
-##out_slope_plot(v['WT'],devs)
-#plt.plot(v['NWT'],devs,'ro')
-#newf,newfD,labe,popt = ftf.fit_series(v['WT'],devs, 
-    #fit_func=ftf.func_linear, return_series='no',log_trans='no')
-#plt.plot(v['NWT'],[newf(wt) for wt in v['WT']],'g',label=labe)
-#plt.legend()
-
-#plt.plot(v['TotDays'],v['NCH4_S1'],'r.')
-#plt.plot(v['TotDays'],expect,'g.')
-#plt.show()
-
-
-#plt.plot(v['Ts10'],v['CH4_S1'],'y.')
-#plt.plot(X,Y,'g.')
-#plt.show()
-#def pickout_outlier1(X,Y):
-    #logF, regF = pot_CH(X,Y)
-
-#fun = pot_CH()
-#plt.plot(v['NTs10'],[fun['log']['NCH4_S2']['NTs10'](x) for x in v['NTs10']],'b')
-#plt.plot(v['NTs10'],[fun['NCH4_S2']['NTs10'](x) for x in v['NTs10']],'r')
-#plt.show()
-
+def find_stable_slope(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp,
+    fit_type=btf.func_linear,num_of_outliers=30,dec_places=10):
     
-    
-    #function_dic.update({
-    #X = v[independent]
-    #Y = v[dependent] if log_trans=='no' else [np.log(de) for de in v[dependent]]
-    #model = [newf(t) for t in X]
-    #all_devs = [Y[i]-model[i] for i in range(0,len(X))]
-    #nolog_model = [np.exp(newf(t)) for t in X]
-    #return all_devs,[X,Y,model,labe,nolog_model]
-
+    #if type(X)==list:
+    #Xtyp = X if type(X)!=list else str(X[0])
+    typee = 'outlier removal, '+list_to_name(X)+' vs. '+list_to_name(Y)
+    if deviations_predictor!=None:
+        dp = deviations_predictor
+        devs = deviations_from_fit(X=dp,Y=Y,fit_type=dev_fit_type)
+        outlier_loop(X=dp,Y=Y,fit_type=dev_fit_type,num_of_outliers=num_of_outliers)
+        typee = 'outlier removal, '+list_to_name(dp)+' vs. '+list_to_name(Y)
+        v.update({'devs':devs})
+        Y='devs'
+        fd = v['mask'][typee]
+    fdic,mask_toss,orr = general_fit_pre(X=X,Y=Y,fit_type=fit_type)
+    slp = round(fdic['slope'],dec_places)
+    pslp = slp
+    converged=False
+    ct=0
+    while converged==False:
+        if deviations_predictor!=None:
+            nmask = fd[ct+1]['mask vector'] #mask from deviation outlier
+        else:
+            nmask=mask_toss
+            nmask = np.zeros_like(v['Ts10'])
+        fdic,mask_toss,orr = general_fit_pre(X=X,Y=Y,fit_type=fit_type,mask=nmask) #X vs dev function with that mask
+        nslp = round(fdic['slope'],dec_places)
+        if (abs(slp-nslp)/abs(slp)<=0.0001) and (abs(pslp-slp)/abs(pslp)<=0.0001) and (ct>=1):
+            converged=True
+            outs_removed = ct
+            outs_removed = sum(nmask)
+        pslp=slp
+        slp=nslp
+        ct+=1
+        if ct>num_of_outliers-1:
+            converged = True
+            outs_removed = 'does not converge after '+str(num_of_outliers-1)
+    return fdic, nmask,outs_removed
