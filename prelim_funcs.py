@@ -121,6 +121,9 @@ def notation_fix(Tsoil,dic=v,naming_dic=n):
     if type(Tsoil)!=list:
         Tsoil = [Tsoil]
     dic,naming_dic = updater(Tsoil[0])
+    #add inundation periods to dictionary
+    if len(Tsoil)>1:
+        dic,naming_dic = threshold_mask(threshold=Tsoil[1])
     for modifier in Tsoil:
         new = Tsil[modifier]
         Tsil = new
@@ -229,7 +232,7 @@ def outlier_loop(X,Y,fit_type=btf.func_linear,num_of_outliers=10):
     return v,n 
 
 def find_stable_slope(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp,
-    fit_type=btf.func_linear,num_of_outliers=30,dec_places=10):
+    fit_type=btf.func_linear,num_of_outliers=30,dec_places=3):
     
     #if type(X)==list:
     #Xtyp = X if type(X)!=list else str(X[0])
@@ -255,7 +258,7 @@ def find_stable_slope(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp,
             nmask = np.zeros_like(v['Ts10'])
         fdic,mask_toss,orr = general_fit_pre(X=X,Y=Y,fit_type=fit_type,mask=nmask) #X vs dev function with that mask
         nslp = round(fdic['slope'],dec_places)
-        if (abs(slp-nslp)/abs(slp)<=0.0001) and (abs(pslp-slp)/abs(pslp)<=0.0001) and (ct>=1):
+        if (abs(slp-nslp)/abs(slp)<=10**(-1*dec_places)) and (abs(pslp-slp)/abs(pslp)<=10**(-1*dec_places)) and (ct>=1):
             converged=True
             outs_removed = ct
             outs_removed = sum(nmask)
