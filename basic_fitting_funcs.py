@@ -100,20 +100,54 @@ def array_span(Xob, function,dense=0,specify_points=0):
         x0,xN = min(Xob),max(Xob)
         Xspan = np.linspace(x0,xN,pts)
         Yexp = [function(x) for x in Xspan]
-        return Xspan, Yexp        
+        return Xspan, Yexp
+
+import scipy
+from scipy.stats import chisquare, linregress
+def include_chi2(X_series,Y_series, fit_func=func_linear, mask=None):
+    dic1 = fit_2sets(X_series,Y_series, fit_func=fit_func, mask=mask)
+    print(linregress(X_series,Y_series))
+    popt = dic1['parameters']
+    def fun_test(xx): return popt[0]+1*popt[1]*xx
+    Y_exp = [fun_test(xx) for xx in X_series]
+    Yscip_exp = scipy.array(Y_exp)
+    X_ob,Y_ob = scipy.array(X_series), scipy.array(Y_series)
+    chi2 = 0
+    for ii in range(0,len(Y_exp)):
+        chi2 += ((Y_series[ii]-Y_exp[ii])**2)/Y_exp[ii]
+    print(chi2)
+    print(chisquare(Y_ob, f_exp=Yscip_exp))
+
+def r_squared(X,Y):
+    linregress(X,Y)
+
+#observed_values=scipy.array([18,21,16,7,15])
+#expected_values=scipy.array([22,19,44,8,16])
+
+#scipy.stats.chisquare(observed_values, f_exp=expected_values)
+
+        
 
 m = [1,0,0,1,1,1,0,0,1,1,0]
 x = [1,2,5,8,10,2,3,4,4,5,3]
 y = [3,4,-1,9,0,1,1,2,3,4,5]
 
-## with mask m
-#dicc = fit_2sets(x,y,fit_func=func_linear,mask=m)
-#fun = dicc['function']
-#xs, yexp = array_span(x,fun,specify_points=20)
-#Xm = np.ma.masked_array(x,mask=m)
-#Ym = np.ma.masked_array(y,mask=m)
-#plt.plot(Xm,Ym,'bo')
-#plt.plot(xs,yexp,'r',label=dicc['print function'])
+m = [0,0,0,0]
+x = [1,2,3,4]
+y = [1,2,3,5]
+print(sum(x)/4,sum(y)/4)
+
+# with mask m
+dicc = fit_2sets(x,y,fit_func=func_linear,mask=m)
+include_chi2(x,y)
+r_squared(x,y)
+fun = dicc['function']
+xs, yexp = array_span(x,fun,specify_points=20)
+Xm = np.ma.masked_array(x,mask=m)
+Ym = np.ma.masked_array(y,mask=m)
+plt.plot(Xm,Ym,'bo')
+plt.plot(xs,yexp,'r',label=dicc['print function'])
+#plt.show()
 
 ## with mask of all 1's (no values masked)
 #dicc = fit_2sets(x,y,fit_func=func_linear,mask=[0,0,0,0,0,0,0,0,0,0,0])
