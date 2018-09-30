@@ -50,7 +50,7 @@ def threshold_mask(threshold=0,param='WT',dic=v,naming_dic=n):
     for idx in range(0, len(dic[param])):
         pt = dic[param][idx]
         #winter condition:
-        if dic['Ts10'][idx]<1:
+        if dic['Ts10'][idx]<0.1:
             #winter...ground too frozen - always mask this
             below, above = 0,0
             if not_winter:
@@ -62,8 +62,10 @@ def threshold_mask(threshold=0,param='WT',dic=v,naming_dic=n):
         if pt>threshold: # inundated
             if dic[param][idx-1]<=threshold:
                 above = 0
+                #print('enters')
             mask_above[idx] = 1 # masks the inundated pt
             above += 1
+            #print(above)
             days_above[idx] = above
             days_below[idx] = 0#below
             #below = 0
@@ -78,7 +80,7 @@ def threshold_mask(threshold=0,param='WT',dic=v,naming_dic=n):
     #days inundated/aerated:
     try:
         dic['period of inundation'].update({threshold:days_above})
-        dic['period of aeration'].update({threshold:days_above})
+        dic['period of aeration'].update({threshold:days_below})
         vec_thresholds = naming_dic['threholds']
     except:
         ta,tb = {},{}
@@ -114,26 +116,50 @@ def threshold_mask(threshold=0,param='WT',dic=v,naming_dic=n):
     naming_dic['mask subtypes'].update({'mask inundated events':vec_thresholds})
     naming_dic['mask subtypes'].update({'mask aerated events':vec_thresholds})
     return dic, naming_dic
-v,n = threshold_mask()
+#v,n = threshold_mask()
+#for idx in range(0,len(v['period of aeration'][0])):
+    ##if v['period of aeration'][0][idx]!=v['mask']['mask aerated events'][0]['mask vector'][idx]:
+    #print(v['period of aeration'][0][idx],v['mask']['mask aerated events'][0]['mask vector'][idx])
 
-def notation_fix(Tsoil,dic=v,naming_dic=n):
+def notation_fix(Tsoil,dic=v,naming_dic=n,ret_dics=0):
     Tsil = dic
     if type(Tsoil)!=list:
         Tsoil = [Tsoil]
     dic,naming_dic = updater(Tsoil[0])
     #add inundation periods to dictionary
-    if len(Tsoil)>1:
-        dic,naming_dic = threshold_mask(threshold=Tsoil[1])
+    if (len(Tsoil)>1 and Tsoil[0]!='mask') or (len(Tsoil)>1 and Tsoil[0]=='mask'):
+        if len(Tsoil)>1 and Tsoil[0]!='mask':
+            thres = Tsoil[1]
+        else:
+            thres = Tsoil[2]
+            Tsoil.append('mask vector')
+        try:
+            dic['period of aeration'][thres]
+        except:
+            dic,naming_dic = threshold_mask(threshold=thres)
+    #elif len(Tsoil)>1 and Tsoil[0]=='mask':
+        #dic,naming_dic = threshold_mask(threshold=Tsoil[2])
+        #Tsoil.append('mask vector')
     for modifier in Tsoil:
         new = Tsil[modifier]
         Tsil = new
-    return Tsil
-def list_to_name(Tsoil):
+    if ret_dics==0:
+        return Tsil
+    else:
+        return Tsil, dic, naming_dic
+def list_to_name(Tsoil,base=0):
     Tstring = ''
     if type(Tsoil)!=list:
-        Tsoil = [Tsoil]
-    for modifier in Tsoil:
-        Tstring += str(modifier)
+        try:
+            Tsoil = [n['full names'][Tsoil]]
+        except:
+            Tsoil = [Tsoil]
+    if base==1:
+        for modifier in [Tsoil[0]]:
+            Tstring += ' '+str(modifier)
+    else:
+        for modifier in Tsoil:
+            Tstring += ' '+str(modifier)
     return Tstring
         
 #outlier_analysis_funcs = {}

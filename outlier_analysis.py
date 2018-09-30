@@ -28,7 +28,7 @@ def plot_basic(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp,
     plt.show()
 
 
-#plot_basic(X='NWT',Y=p2,deviations_predictor='NTs10')
+plot_basic(X='NWT',Y='CH4',deviations_predictor='NTs10')
 ##plot_basic(X='NWT',Y=p2)
 #plt.show()
 
@@ -61,7 +61,12 @@ def plot_outliers_vslope(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp
     Xv = np.ma.masked_array(Xsil,mask=stable_mask)
     Yv = np.ma.masked_array(Ysil,mask=stable_mask)
     func_dic, toss1, toss2 = general_fit_pre(X,Y,fit_type=fit_type)
-    xs, yexp = btf.array_span(Xsil,func_dic['function'],specify_points=20)
+    #if fit_type==btf.func_exp: #that is if the fit for WT vs devs is exponential then we want to see that
+        #def plotfun(xx): return np.exp(func_dic['function'](xx))
+    #else:
+        #plotfun=func_dic['function']
+    plotfun=func_dic['function']
+    xs, yexp = btf.array_span(Xsil,plotfun,specify_points=20)
     plt.scatter(Xsil,Ysil,c='r',edgecolor='r')
     plt.scatter(Xv,Yv,c='y')
     plt.plot(xSTAB,yexpSTAB,'y--',label=stable_fdic['print function']+'\nstable at '+str(outs_removed)+' outliers removed')
@@ -90,8 +95,8 @@ def plot_outliers_vslope(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp
 #plot_outliers(X='NWT',Y='devs',deviations_predictor='NTs10')
 
 p2 = 'CH4_S1'
-#plot_outliers_vslope(X=['period of inundation',0],Y=p2,deviations_predictor='NTs10')
-plot_outliers_vslope(X='WT',Y=p2,deviations_predictor='NTs10')
+plot_outliers_vslope(X=['period of inundation',3],Y=p2,deviations_predictor='NTs10')
+#plot_outliers_vslope(X='WT',Y=p2,deviations_predictor='Ts10')
 #plot_outliers_vslope(X='NWT',Y=p2)
 plt.show()
 

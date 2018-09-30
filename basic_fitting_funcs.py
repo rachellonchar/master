@@ -66,6 +66,7 @@ def pre_plot(tupl,fit_type='poly'):#,y_axis=None):
         for i in range(2, len(tupl)):
             strg += ' %5.3fx^'+str(i)
         return strg % tuple(tupl)
+    #elif fit_type=='linear'
     elif fit_type==func_exp:
         return 'f(x) = %5.3fexp(%5.3fx)' % tuple(tupl)
     elif fit_type==func_logistic:
@@ -90,14 +91,22 @@ def fit_2sets(X_series,Y_series, fit_func=func_linear, mask=None):
     dic1.update({'print function':labe})
     return dic1
 
-def lin_fit(X_series,Y_series, fit_func=func_linear, mask=None):
+def lin_fit(X_series,Y_series, mask=None,type_return='slope'):
     X,Y = X_series, Y_series
     if type(mask)!=type(None):
         Xm = np.ma.masked_array(X,mask=mask)
         Ym = np.ma.masked_array(Y,mask=mask)
         X,Y = Xm.compressed(), Ym.compressed()
     slope, intercept, rvalue, pvalue, stderr = linregress(X,Y)
-    return slope
+    if type_return=='slope':
+        return slope
+    elif type_return=='function':
+        def newf(x): return intercept+slope*x
+        return newf
+    elif type_return=='function and print':
+        def newf(x): return intercept+slope*x
+        printf = pre_plot(tuple([intercept,slope]))
+        return newf, printf
             
     #X,Y = X_series, Y_series
     #if type(mask)!=type(None):
