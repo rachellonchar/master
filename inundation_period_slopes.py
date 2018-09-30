@@ -1,49 +1,8 @@
 from prelim_funcs import *
 
-def plot_basic(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp,
-    fit_type=btf.func_linear,num_of_outliers=30):
-    
-    fig, ax = plt.subplots(ncols=1,nrows=1)
-    stable_fdic,stable_mask,outs_removed = find_stable_slope(X=X,Y=Y,deviations_predictor=deviations_predictor,
-        dev_fit_type=dev_fit_type, fit_type=fit_type,num_of_outliers=num_of_outliers)
-    Xsil,Ysil = notation_fix(X),notation_fix(Y)
-    xSTAB, yexpSTAB = btf.array_span(Xsil,stable_fdic['function'],specify_points=20)
-    if deviations_predictor!=None:
-        dp = deviations_predictor
-        typee = 'outlier removal, '+list_to_name(dp)+' vs. '+list_to_name(Y)
-        Y='devs'
-        fd = v['mask'][typee]
-    if deviations_predictor!=None:
-        Y='devs'
-    Xv = np.ma.masked_array(Xsil,mask=stable_mask)
-    Yv = np.ma.masked_array(Ysil,mask=stable_mask)
-    func_dic, toss1, toss2 = general_fit_pre(X,Y,fit_type=fit_type)
-    xs, yexp = btf.array_span(Xsil,func_dic['function'],specify_points=20)
-    plt.scatter(Xsil,Ysil,c='r',edgecolor='r')
-    plt.scatter(Xv,Yv,c='y')
-    plt.plot(xSTAB,yexpSTAB,'y--',label=stable_fdic['print function']+'\nstable at '+str(outs_removed)+' outliers removed')
-    plt.plot(xs,yexp,'r--',label=func_dic['print function'])
-    plt.legend(loc=2,ncol=1, fancybox=True,prop={'size':10})
-    plt.tight_layout()
-    plt.show()
-
-
-#plot_basic(X='NWT',Y=p2,deviations_predictor='NTs10')
-##plot_basic(X='NWT',Y=p2)
-#plt.show()
-
 def plot_inundation_periods(X,Y,deviations_predictor=None,dev_fit_type=btf.func_exp,
     fit_type=btf.func_linear,num_of_outliers=60,
     mask_aerated=0,mask_inundated=0,mask_threshold=0):
-    
-    #cols,rows = 1,2
-    #fig, ax = plt.subplots(ncols=cols,nrows=rows,  sharex=True, sharey=True, figsize=(15,8.3))
-    
-    #stable_fdic,stable_mask,outs_removed = find_stable_slope(X=X,Y=Y,deviations_predictor=deviations_predictor,
-        #dev_fit_type=dev_fit_type, fit_type=fit_type,num_of_outliers=num_of_outliers)
-    ##if deviations_predictor!=None:
-        ##Y='devs'
-    
     Xsil,Ysil = notation_fix(X),notation_fix(Y)
     if mask_aerated==1 or mask_inundated==1:
         a_or_i = 'mask aerated events' if mask_aerated==1 else 'mask inundated events'
@@ -53,60 +12,12 @@ def plot_inundation_periods(X,Y,deviations_predictor=None,dev_fit_type=btf.func_
     #print(Xsil)
     plt.plot(Xsil,Ysil,'ro')
     plt.show()
-    #xSTAB, yexpSTAB = btf.array_span(Xsil,stable_fdic['function'],specify_points=20)
-    #if deviations_predictor!=None:
-        #dp = deviations_predictor
-        #typee = 'outlier removal, '+list_to_name(dp)+' vs. '+list_to_name(Y)
-        #out_X, out_Y = dp,Y
-        #Y='devs'
-    #else:
-        #outlier_loop(X=X,Y=Y,fit_type=fit_type,num_of_outliers=num_of_outliers)
-        #typee = 'outlier removal, '+list_to_name(X)+' vs. '+list_to_name(Y)
-        #out_X, out_Y = X,Y
-    #fd = v['mask'][typee]
-    #Ysil = notation_fix(Y)
-    
-    ##plot graphs with model and stable model:
-    #plt.subplot(cols,rows,1)
-    #Xv = np.ma.masked_array(Xsil,mask=stable_mask)
-    #Yv = np.ma.masked_array(Ysil,mask=stable_mask)
-    #func_dic, toss1, toss2 = general_fit_pre(X,Y,fit_type=fit_type)
-    ##if fit_type==btf.func_exp: #that is if the fit for WT vs devs is exponential then we want to see that
-        ##def plotfun(xx): return np.exp(func_dic['function'](xx))
-    ##else:
-        ##plotfun=func_dic['function']
-    #plotfun=func_dic['function']
-    #xs, yexp = btf.array_span(Xsil,plotfun,specify_points=20)
-    #plt.scatter(Xsil,Ysil,c='r',edgecolor='r')
-    #plt.scatter(Xv,Yv,c='y')
-    #plt.plot(xSTAB,yexpSTAB,'y--',label=stable_fdic['print function']+'\nstable at '+str(outs_removed)+' outliers removed')
-    #plt.plot(xs,yexp,'r--',label=func_dic['print function'])
-    #plt.legend(loc=2,ncol=1, fancybox=True,prop={'size':10})
-    #plt.xlabel(X)
-    #if deviations_predictor!=None:
-        #plt.ylabel('deviations of '+list_to_name(out_Y)+'(observed-expected)'+
-            #'\nbased off '+' of '+list_to_name(out_X)+' vs. '+list_to_name(out_Y))
-    #else:
-        #plt.ylabel(list_to_name(Y))
-    
-    ##plot outliers vs slope:
-    #plt.subplot(cols,rows,2)
-    #outs,slps = [],[]
-    #for ii in range(1,num_of_outliers+2):
-        #mask_ = fd[ii-1]['mask vector']
-        #sl_op = general_fit_pre(X,Y,fit_type=fit_type,mask=mask_,just_slope=1)
-        #outs.append(ii-1)
-        #slps.append(sl_op)
-    #plt.xlabel('outliers removed')
-    #plt.ylabel('slope')
-    #plt.plot(outs,slps)
-    ##plt.show()
 
-def demoo(Xvar='CH4_S1',Yvar='WT',color='NTs10',col_map='coolwarm',threshold=7,deviations_predictor='NTs10',dev_fit_type=btf.func_exp):
+def slope_per_period(Xvar='CH4_S1',Yvar='WT',color='NTs10',col_map='coolwarm',threshold=7,
+    deviations_predictor='NTs10',dev_fit_type=btf.func_exp):
     
     cols,rows = 1,2
     fig, ax = plt.subplots(ncols=cols,nrows=rows,  sharex=True, sharey=True, figsize=(18,9))
-    
     #just show WT time series, colored with temp and print a straight line for threshold 
     plt.subplot(cols,rows,1)
     mask = notation_fix(['mask','mask inundated events',threshold])
@@ -162,12 +73,87 @@ def demoo(Xvar='CH4_S1',Yvar='WT',color='NTs10',col_map='coolwarm',threshold=7,d
     plt.colorbar(mapper,label='temp')
     plt.legend()
     plt.show()
+
+def slope_at_thresholds(thresholds_array=[0,3,5,7,8,10],Xvar='period of aeration',Yvar='CH4_S1',color='NTs10',col_map='coolwarm',
+    deviations_predictor='NTs10',dev_fit_type=btf.func_exp,mask_events='inundated'):
         
+    #thresholds_array = np.append(-5,thresholds_array)
+    t_e = 'aerated' if mask_events=='inundated' else 'inundated'
+    num_plots=len(thresholds_array)
+    cols = math.floor(np.sqrt(num_plots))
+    rows = math.ceil(num_plots/cols)
+    if cols<rows:
+        f1,f2=11.7,8.3
+    else:
+        f1,f2=8.3,11.7
+    #print(rows,cols)
+    fig, ax = plt.subplots(ncols=cols,nrows=rows,  sharex=True, sharey=True, figsize=(f1,f2))
+    ct = 1
+    for threshold in thresholds_array:
+        plt.subplot(cols,rows,ct)
+        #mask = notation_fix(['mask','mask '+mask_events+' events',threshold]) #if ct>1 else None #np.zeros_like(notation_fix(Xvar))
+        
+    #PoI = notation_fix(['period of aeration',threshold])
+        if type(deviations_predictor) != type(None):
+            Y = deviations_from_fit(deviations_predictor, Yvar, fit_type=dev_fit_type,mask=None)
+        else:
+            Y = notation_fix(Yvar)
+        
+        #added in meeting:
+        mask = [0 if notation_fix(['period of aeration',threshold])[idx]>10 else 1 for idx in range(0,len(Y))]
+        newp = np.ma.masked_array(notation_fix(['period of aeration',threshold]),mask=mask)
+        newy = np.ma.masked_array(Y,mask=mask)
+        plt.plot(notation_fix(['period of aeration',threshold]),Y,'ro')
+        plt.plot(newp,newy,'bo')
+        fun, print_fun = btf.lin_fit(notation_fix(['period of aeration',threshold]),Y,mask=mask,type_return='function and print')
+        Xexp,Yexp = btf.array_span(notation_fix(['period of aeration',threshold]), fun,dense=1,specify_points=20)
+        plt.plot(Xexp,Yexp,'r',label=print_fun)
+        plt.legend(loc=2,ncol=1, fancybox=True,prop={'size':10})
+        
+        ##print(btf.lin_fit(notation_fix(Xvar),Y,mask=mask,type_return='function and print'))
+        #Xvar = ['period of aeration',threshold]
+        #fun, print_fun = btf.lin_fit(notation_fix(Xvar),Y,mask=mask,type_return='function and print')
+        ##print(mask)
+        #Xexp,Yexp = btf.array_span(notation_fix(Xvar), fun,dense=1,specify_points=20)
+        #X = np.ma.masked_array(notation_fix(Xvar),mask=mask)
+        #Y = np.ma.masked_array(Y,mask=mask)
+        ##plt.plot(X,Y,'ro')
+        #plt.plot(Xexp,Yexp,'r',label=print_fun)
+        ##ColorV = np.ma.masked_array(notation_fix(color),mask=mask)
+        #ColorV = notation_fix(color)
+        ##maxD, minD = np.ma.MaskedArray.max(ColorV), np.ma.MaskedArray.min(ColorV)
+        #maxD, minD = max(ColorV), min(ColorV)
+        #norm = matplotlib.colors.Normalize(vmin=minD, vmax=maxD, clip=True)
+        #mapper = cm.ScalarMappable(norm=norm, cmap=plt.cm.get_cmap(col_map))
+        #bill = [mapper.to_rgba(val) for val in notation_fix(color)]
+        #plt.scatter(X,Y,s=30,c=bill,cmap=mapper,
+            #edgecolor=bill,vmin=minD,vmax=maxD,label='all '+t_e+' events')
+        #plt.legend(loc=2,ncol=1, fancybox=True,prop={'size':10})
+        #mapper.set_array([])
+        #if ct>1:
+        plt.title('threshold='+str(threshold))
+        plt.vlines(threshold,-1,1)
+        #else:
+            #plt.title('no masking')
+        ##plt.ylabel('CH4 residuals (based on soil temp at -10 cm)')
+        ##plt.xlabel('Water table of '+t_e+' events')
+        ##plt.ylim(ymin=-0.5,ymax=3.5)
+        ##plt.xlim(xmin=-.02,xmax=.16)
+        #plt.colorbar(mapper,label='soil temp')
+        ct+=1
+    #fig.text(0.5, 0.04,'Water table of '+t_e+' events', ha='center',fontdict=font)
+    #fig.text(0.04, 0.5, 'CH4 residuals (based on soil temp at -10 cm)', va='center', rotation='vertical',fontdict=font)
+    #plt.suptitle('Sensitivity to water table at different threshold definitions of '+t_e+' events',fontsize=16,fontdict=font)
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9,bottom=.1,left=.13)
+    plt.grid()
+    plt.show()
         
     #Xsil = np.ma.masked_array(Xsil,mask=mask)
     #Ysil = np.ma.masked_array(Ysil,mask=mask)
     
-demoo(threshold=5)
+#slope_at_thresholds()
+slope_per_period(threshold=15)
 #plot_outliers(X='NWT',Y='devs',deviations_predictor='NTs10')
 
 p2 = 'CH4_S1'
