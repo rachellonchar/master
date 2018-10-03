@@ -1,7 +1,9 @@
 from prelim_funcs import *
+cwd = os.getcwd()
 
 def slope_at_thresholds(thresholds_array=[0,5,7,8,10],Xvar='period of aeration',Yvar='CH4_S1',color='NTs10',col_map='coolwarm',
-    deviations_predictor='NTs10',dev_fit_type=btf.func_exp,mask_events='inundated',show_masked_pts=0):
+    deviations_predictor='NTs10',dev_fit_type=btf.func_exp,mask_events='inundated',show_masked_pts=0,
+    pic_name=None, pic_folder_name=None,save_or_show='show',cwd=cwd):
         
     #thresholds_array = np.append(-5,thresholds_array)
     if Xvar[:6]!='period':
@@ -69,19 +71,32 @@ def slope_at_thresholds(thresholds_array=[0,5,7,8,10],Xvar='period of aeration',
         else:
             plt.xlim(xmin=min(Xexp),xmax=max(Xexp))
         plt.colorbar(mapper,label='soil temp')
+        plt.grid()
         ct+=1
     fig.text(0.5, 0.04,list_to_name(Xvar,base=1)+' of '+t_e+' events', ha='center',fontdict=font)
     fig.text(0.04, 0.5, 'CH4 residuals (based on soil temp at -10 cm)', va='center', rotation='vertical',fontdict=font)
     plt.suptitle('Sensitivity to water table at different threshold definitions of '+t_e+' events',fontsize=16,fontdict=font)
     plt.tight_layout()
     plt.subplots_adjust(top=0.9,bottom=.1,left=.13)
-    plt.grid()
-    plt.show()
+    #plt.show()
+    if pic_name==None:
+        if save_or_show=='save':
+            
+            plt.savefig(cwd+'/g/net_inundation/'+urlify(list_to_name(Xvar,base=1)+' of '+t_e+' events'), bbox_inches='tight')
+            plt.close(fig)
+        else:
+            plt.show()
+    else:
+        pnam = pic_namer(pic_name, pic_folder_name)
+        plt.savefig(pnam, bbox_inches='tight')
         
     #Xsil = np.ma.masked_array(Xsil,mask=mask)
     #Ysil = np.ma.masked_array(Ysil,mask=mask)
     
-slope_at_thresholds(Xvar='WT')
+#slope_at_thresholds(Xvar='WT',save_or_show='save')
+slope_at_thresholds(Xvar='WT',mask_events='aerated',save_or_show='save')
+slope_at_thresholds(Xvar='period of inundation',save_or_show='save')
+slope_at_thresholds(Xvar='period of aeration',save_or_show='save')
 
 #slope_per_period(threshold=15)
 #plot_outliers(X='NWT',Y='devs',deviations_predictor='NTs10')
